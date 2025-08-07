@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ...options,
                     headers: {
                         'Origin': 'https://rejdukien.github.io',
+                        'Access-Control-Allow-Origin': '*', // Allow all origins for CORS
                         ...options.headers
                     }
                 };
