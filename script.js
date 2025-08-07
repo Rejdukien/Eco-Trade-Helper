@@ -1,7 +1,12 @@
 document.addEventListener('DOMContentLoaded', () => {
     const tradesContainer = document.getElementById('trades-container');
     const DEFAULT_BASE_URL = 'http://148.251.154.60:3011';
-    const CORS_PROXY = 'https://proxy.cors.sh/';
+    const CORS_PROXIES = [
+        'https://api.allorigins.win/raw?url=',
+        'https://proxy.cors.sh/',
+        'https://corsproxy.io/?url='
+    ];
+    let currentProxyIndex = 0;
     const USE_CORS_PROXY = window.location.protocol === 'https:';
     
     let baseApiUrl = DEFAULT_BASE_URL;
@@ -96,9 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update API URLs when server URL changes
     function updateApiUrls() {
         if (USE_CORS_PROXY) {
-            apiUrl = `${CORS_PROXY}${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/stores`;
-            itemsApiUrl = `${CORS_PROXY}${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/allItems`;
-            infoApiUrl = `${CORS_PROXY}${baseApiUrl}/info`;
+            apiUrl = `${CORS_PROXIES[currentProxyIndex]}${encodeURIComponent(baseApiUrl)}/api/v1/plugins/EcoPriceCalculator/stores`;
+            itemsApiUrl = `${CORS_PROXIES[currentProxyIndex]}${encodeURIComponent(baseApiUrl)}/api/v1/plugins/EcoPriceCalculator/allItems`;
+            infoApiUrl = `${CORS_PROXIES[currentProxyIndex]}${encodeURIComponent(baseApiUrl)}/info`;
         } else {
             apiUrl = `${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/stores`;
             itemsApiUrl = `${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/allItems`;
@@ -106,24 +111,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Fetch with proxy fallback
+    async function fetchWithProxyFallback(endpoint, options = {}) {
+        if (!USE_CORS_PROXY) {
+            return fetch(endpoint, options);
+        }
+
+        let lastError;
+        
+        for (let i = 0; i < CORS_PROXIES.length; i++) {
+            try {
+                currentProxyIndex = i;
+                const proxyUrl = `${CORS_PROXIES[i]}${encodeURIComponent(endpoint)}`;
+                console.log(`Attempting fetch with proxy ${i + 1}/${CORS_PROXIES.length}: ${CORS_PROXIES[i]}`);
+                
+                const fetchOptions = {
+                    ...options,
+                    headers: {
+                        'Origin': 'https://rejdukien.github.io',
+                        ...options.headers
+                    }
+                };
+                
+                const response = await fetch(proxyUrl, fetchOptions);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                console.log(`Successful fetch with proxy ${i + 1}: ${CORS_PROXIES[i]}`);
+                return response;
+            } catch (error) {
+                console.warn(`Proxy ${i + 1} failed:`, error.message);
+                lastError = error;
+                
+                // If this was the last proxy, throw the error
+                if (i === CORS_PROXIES.length - 1) {
+                    throw lastError;
+                }
+            }
+        }
+    }
+
     // Fetch server info and update display
     async function fetchServerInfo() {
         try {
-            const url = USE_CORS_PROXY ? `${CORS_PROXY}${baseApiUrl}/info` : `${baseApiUrl}/info`;
+            const url = `${baseApiUrl}/info`;
             console.log('Fetching server info from:', url);
             
-            const fetchOptions = {};
-            if (USE_CORS_PROXY) {
-                fetchOptions.headers = {
-                    'Origin': 'https://rejdukien.github.io'
-                };
-            }
-            
-            const response = await fetch(url, fetchOptions);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            const response = await fetchWithProxyFallback(url);
             
             const text = await response.text();
             console.log('Raw response:', text.substring(0, 200));
@@ -134,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const rawServerName = data.Description ? `${data.Description}` : 'Unknown Server';
             // Filter out color tags like <#59e817>
             const serverName = rawServerName.replace(/<#[0-9a-fA-F]{6}>/g, '').trim();
-            const proxyIndicator = USE_CORS_PROXY ? ' (via proxy)' : '';
+            const proxyIndicator = USE_CORS_PROXY ? ` (via ${CORS_PROXIES[currentProxyIndex].replace('?url=', '').replace('raw?url=', '').replace('/', '')})` : '';
             serverNameSpan.textContent = `Server: ${serverName}${proxyIndicator}`;
             serverNameSpan.style.color = '#4CAF50';
         } catch (error) {
@@ -202,20 +238,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function fetchData() {
-        // Use the pre-constructed URLs from updateApiUrls()
-        console.log('Fetching data from URLs:', { apiUrl, itemsApiUrl, infoApiUrl });
-        
-        const fetchOptions = {};
-        if (USE_CORS_PROXY) {
-            fetchOptions.headers = {
-                'Origin': 'https://rejdukien.github.io'
-            };
-        }
+        // Use the new proxy fallback system
+        console.log('Fetching data from base URL:', baseApiUrl);
         
         Promise.all([
-            fetch(infoApiUrl, fetchOptions).then(response => response.json()).catch(() => ({ OnlinePlayersNames: [] })),
-            fetch(apiUrl, fetchOptions).then(response => response.json()),
-            fetch(itemsApiUrl, fetchOptions).then(response => response.json())
+            fetchWithProxyFallback(`${baseApiUrl}/info`).then(response => response.json()).catch(() => ({ OnlinePlayersNames: [] })),
+            fetchWithProxyFallback(`${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/stores`).then(response => response.json()),
+            fetchWithProxyFallback(`${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/allItems`).then(response => response.json())
         ])
             .then(([infoData, storesData, itemsData]) => {
                 // Update server info
@@ -224,7 +253,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const rawServerName = infoData.Description ? `${infoData.Description}` : 'Unknown Server';
                 // Filter out color tags like <#59e817>
                 const serverName = rawServerName.replace(/<#[0-9a-fA-F]{6}>/g, '').trim();
-                serverNameSpan.textContent = `Server: ${serverName}`;
+                const proxyIndicator = USE_CORS_PROXY ? ` (via ${CORS_PROXIES[currentProxyIndex].replace('?url=', '').replace('raw?url=', '').replace('/', '')})` : '';
+                serverNameSpan.textContent = `Server: ${serverName}${proxyIndicator}`;
                 serverNameSpan.style.color = '#4CAF50';
                 
                 // Process store and item data
