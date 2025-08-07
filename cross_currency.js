@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const sameIntermediateStoreCheckbox = document.getElementById('same-intermediate-store');
     const serverUrlInput = document.getElementById('server-url');
     const serverNameSpan = document.getElementById('server-name');
+    const baseCurrencySelect = document.getElementById('base-currency');
+    const minProfitCurrencySpan = document.getElementById('min-profit-currency');
+    const profitHeaderElement = document.getElementById('profit-header');
     
     const DEFAULT_BASE_URL = 'http://148.251.154.60:3011';
     const CORS_PROXY = 'https://proxy.cors.sh/';
@@ -22,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let allItems = {};
     let serverInfo = {};
     let onlinePlayerNames = [];
+    let availableCurrencies = [];
 
     // Load saved preferences from localStorage
     function loadPreferences() {
@@ -52,6 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sameStore) {
             sameIntermediateStoreCheckbox.checked = true;
         }
+
+        // Note: Base currency preference is handled in populateBaseCurrencySelector
     }
 
     // Save preferences to localStorage
@@ -59,6 +65,52 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('ecoTradeHelper_darkMode', document.body.classList.contains('dark-mode'));
         localStorage.setItem('ecoTradeHelper_crossCurrency_minProfit', minProfitInput.value);
         localStorage.setItem('ecoTradeHelper_crossCurrency_sameStore', sameIntermediateStoreCheckbox.checked);
+        localStorage.setItem('ecoTradeHelper_crossCurrency_baseCurrency', baseCurrencySelect.value);
+    }
+
+    // Update currency labels in the UI
+    function updateCurrencyLabels() {
+        const selectedCurrency = baseCurrencySelect.value;
+        minProfitCurrencySpan.textContent = selectedCurrency;
+        profitHeaderElement.textContent = `Total Profit (${selectedCurrency})`;
+    }
+
+    // Populate base currency selector
+    function populateBaseCurrencySelector(currencies) {
+        // Save current selection if any
+        const currentSelection = baseCurrencySelect.value;
+        
+        // Clear existing options except the default
+        baseCurrencySelect.innerHTML = '';
+        
+        currencies.forEach(currency => {
+            const option = document.createElement('option');
+            option.value = currency;
+            option.textContent = currency;
+            baseCurrencySelect.appendChild(option);
+        });
+
+        // Determine what to set as selected
+        const savedBaseCurrency = localStorage.getItem('ecoTradeHelper_crossCurrency_baseCurrency');
+        let selectedCurrency = null;
+        
+        // Priority: 1. Current selection, 2. Saved preference, 3. Crabbies, 4. First currency
+        if (currentSelection && currencies.includes(currentSelection)) {
+            selectedCurrency = currentSelection;
+        } else if (savedBaseCurrency && currencies.includes(savedBaseCurrency)) {
+            selectedCurrency = savedBaseCurrency;
+        } else if (currencies.includes('Crabbies')) {
+            selectedCurrency = 'Crabbies';
+        } else if (currencies.length > 0) {
+            selectedCurrency = currencies[0];
+        }
+        
+        if (selectedCurrency) {
+            baseCurrencySelect.value = selectedCurrency;
+        }
+
+        updateCurrencyLabels();
+        availableCurrencies = currencies;
     }
 
     // Update API URLs when server URL changes
@@ -206,6 +258,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 allItems = itemsData.AllItems;
                 console.log('Starting calculateCrossCurrencyTrades...');
                 
+                // Extract and populate currencies
+                const currencies = [...new Set(allStores.map(store => store.CurrencyName))];
+                populateBaseCurrencySelector(currencies);
+                
                 // Show progress to user
                 const tradesContainer = document.getElementById('trades-container');
                 tradesContainer.innerHTML = '<p>Calculating cross-currency trade opportunities...</p>';
@@ -213,7 +269,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Use setTimeout to allow UI to update before heavy computation
                 setTimeout(() => {
                     const sameIntermediateStore = sameIntermediateStoreCheckbox.checked;
-                    const crossCurrencyTrades = calculateCrossCurrencyTrades(allStores, sameIntermediateStore);
+                    const selectedBaseCurrency = baseCurrencySelect.value;
+                    const crossCurrencyTrades = calculateCrossCurrencyTrades(allStores, sameIntermediateStore, selectedBaseCurrency);
                     console.log('calculateCrossCurrencyTrades completed. Found', crossCurrencyTrades.length, 'trades');
 
                     allTrades = crossCurrencyTrades;
@@ -357,14 +414,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return null; // Indicate failure to convert
     }
 
-    function calculateCrossCurrencyTrades(stores, sameIntermediateStore = false) {
+    function calculateCrossCurrencyTrades(stores, sameIntermediateStore = false, baseCurrency = 'Crabbies') {
         console.log('Starting calculateCrossCurrencyTrades with', stores.length, 'stores');
         console.log('Same intermediate store constraint:', sameIntermediateStore);
+        console.log('Base currency:', baseCurrency);
         const trades = [];
         
         try {
             const exchangeRates = calculateExchangeRates(stores);
-            const baseCurrency = 'Crabbies';
             
             let loopCount = 0;
             let validTradesFound = 0;
@@ -375,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 for (const offer1 of getSellingOffers(store1)) {
                     const tradeResults = findCrossCurrencyTradesForItem(
-                        store1, offer1, stores, baseCurrency, loopCount, validTradesFound, sameIntermediateStore
+                        store1, offer1, stores, baseCurrency, loopCount, validTradesFound, sameIntermediateStore, exchangeRates
                     );
                     
                     trades.push(...tradeResults.trades);
@@ -400,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return trades;
     }
 
-    function findCrossCurrencyTradesForItem(store1, offer1, stores, baseCurrency, loopCount, validTradesFound, sameIntermediateStore = false) {
+    function findCrossCurrencyTradesForItem(store1, offer1, stores, baseCurrency, loopCount, validTradesFound, sameIntermediateStore = false, exchangeRates) {
         const trades = [];
         const itemA = offer1.ItemName;
 
@@ -417,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const step3Results = findStep3And4Trades(
-                    store1, offer1, store2, offer2, stores, baseCurrency, validTradesFound, sameIntermediateStore
+                    store1, offer1, store2, offer2, stores, baseCurrency, validTradesFound, sameIntermediateStore, exchangeRates
                 );
                 
                 trades.push(...step3Results.trades);
@@ -428,7 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return { trades, loopCount, validTradesFound };
     }
 
-    function findStep3And4Trades(store1, offer1, store2, offer2, stores, baseCurrency, validTradesFound, sameIntermediateStore = false) {
+    function findStep3And4Trades(store1, offer1, store2, offer2, stores, baseCurrency, validTradesFound, sameIntermediateStore = false, exchangeRates) {
         const trades = [];
 
         for (const store3 of stores) {
@@ -451,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const trade = evaluateTradeOpportunity(
                             store1, offer1, store2, offer2, 
                             store3, offer3, store4, offer4, 
-                            baseCurrency
+                            baseCurrency, exchangeRates
                         );
 
                         if (trade) {
@@ -497,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return store1.Name !== store2.Name && store1.CurrencyName !== store2.CurrencyName;
     }
 
-    function evaluateTradeOpportunity(store1, offer1, store2, offer2, store3, offer3, store4, offer4, baseCurrency) {
+    function evaluateTradeOpportunity(store1, offer1, store2, offer2, store3, offer3, store4, offer4, baseCurrency, exchangeRates) {
         // Check if this follows the required 4-step pattern
         if (!isValidTradePattern(store1, store2, store3, store4, baseCurrency)) {
             return null;
@@ -512,6 +569,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!areValidPrices(prices)) {
             return null;
+        }
+
+        // Convert prices to base currency for profit calculation
+        const costA_Base = convertToBaseCurrency(prices.costA_Crabbies, store1.CurrencyName, baseCurrency, exchangeRates);
+        const revenueB_Base = convertToBaseCurrency(prices.revenueB_Crabbies, store4.CurrencyName, baseCurrency, exchangeRates);
+        
+        if (costA_Base === null || revenueB_Base === null) {
+            return null; // Cannot convert to base currency
         }
 
         // Quick profit check before expensive quantity calculations
@@ -535,20 +600,20 @@ document.addEventListener('DOMContentLoaded', () => {
             return null;
         }
 
-        // Calculate actual profit based on real quantities, not theoretical per-unit profit
-        const totalCostItemA = quantities.finalItemAQty * prices.costA_Crabbies;
-        const totalRevenueItemB = quantities.finalItemBQty * prices.revenueB_Crabbies;
-        const totalProfit = totalRevenueItemB - totalCostItemA;
-        const actualProfitPerUnit = quantities.finalItemAQty > 0 ? totalProfit / quantities.finalItemAQty : 0;
+        // Calculate actual profit based on real quantities in base currency
+        const totalCostItemA_Base = quantities.finalItemAQty * costA_Base;
+        const totalRevenueItemB_Base = quantities.finalItemBQty * revenueB_Base;
+        const totalProfit_Base = totalRevenueItemB_Base - totalCostItemA_Base;
+        const actualProfitPerUnit_Base = quantities.finalItemAQty > 0 ? totalProfit_Base / quantities.finalItemAQty : 0;
         
-        if (!isFinite(totalProfit) || totalProfit <= 0) {
+        if (!isFinite(totalProfit_Base) || totalProfit_Base <= 0) {
             return null;
         }
 
         return createTradeObject(
             offer1, offer2, offer3, offer4,
             store1, store2, store3, store4,
-            quantities, actualProfitPerUnit, totalProfit, prices
+            quantities, actualProfitPerUnit_Base, totalProfit_Base, prices, baseCurrency
         );
     }
 
@@ -644,7 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    function createTradeObject(offer1, offer2, offer3, offer4, store1, store2, store3, store4, quantities, profitPerUnit, totalProfit, prices) {
+    function createTradeObject(offer1, offer2, offer3, offer4, store1, store2, store3, store4, quantities, profitPerUnit, totalProfit, prices, baseCurrency) {
         return {
             itemA: offer1.ItemName,
             buyAFrom: store1.Name,
@@ -666,6 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sellBCurrency: store4.CurrencyName,
             totalProfitInBase: totalProfit,
             profitPerUnit: profitPerUnit,
+            baseCurrency: baseCurrency,
             qtyToBuyStep1: quantities.finalItemAQty,
             qtyToBuyStep3: quantities.finalItemBQty,
             store1Balance: store1.Balance || 0,
@@ -695,6 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Restore the table structure if it's missing
         if (!document.querySelector('#trades-table')) {
+            const currentBaseCurrency = baseCurrencySelect.value || 'Crabbies';
             tradesContainer.innerHTML = `
                 <table id="trades-table">
                     <thead>
@@ -705,7 +772,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <th>Step 4: Sell Item B</th>
                             <th>Qty to Buy (Step 1)</th>
                             <th>Qty to Buy (Step 3)</th>
-                            <th>Total Profit (Crabbies)</th>
+                            <th id="profit-header">Total Profit (${currentBaseCurrency})</th>
                             <th>Profit per Unit</th>
                         </tr>
                     </thead>
@@ -776,6 +843,11 @@ document.addEventListener('DOMContentLoaded', () => {
     sameIntermediateStoreCheckbox.addEventListener('change', () => {
         savePreferences();
         fetchData();
+    });
+    baseCurrencySelect.addEventListener('change', () => {
+        savePreferences();
+        updateCurrencyLabels();
+        fetchData(); // Recalculate trades with new base currency
     });
     darkModeToggle.addEventListener('change', () => {
         document.body.classList.toggle('dark-mode');

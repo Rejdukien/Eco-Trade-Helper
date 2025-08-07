@@ -27,7 +27,7 @@
     </header>
     <main>
         <div class="controls">
-            <p>This page shows potential arbitrage opportunities across different currencies. All profits are calculated in the base currency (Crabbies).</p>
+            <p>This page shows potential arbitrage opportunities across different currencies. All profits are calculated in the selected base currency.</p>
             <div id="proxy-notice" class="proxy-notice" style="display: none;">
                 <p><strong>Note:</strong> This site is using a proxy service to access HTTP endpoints from HTTPS. Data may be slightly delayed.</p>
             </div>
@@ -43,8 +43,14 @@
                 </ul>
             </div>
             <div class="filter-controls">
-                <label for="min-profit">Min Profit (Crabbies):</label>
+                <label for="base-currency">Base Currency:</label>
+                <select id="base-currency">
+                    <option value="Crabbies">Crabbies</option>
+                </select>
+                
+                <label for="min-profit">Min Profit:</label>
                 <input type="number" id="min-profit" value="1" step="0.1" min="0">
+                <span id="min-profit-currency">Crabbies</span>
                 
                 <label class="checkbox-container">
                     <input type="checkbox" id="same-intermediate-store">
@@ -65,7 +71,7 @@
                         <th>Step 4: Sell Item B</th>
                         <th>Qty to Buy (Step 1)</th>
                         <th>Qty to Buy (Step 3)</th>
-                        <th>Total Profit (Crabbies)</th>
+                        <th id="profit-header">Total Profit</th>
                         <th>Profit per Unit</th>
                     </tr>
                 </thead>
