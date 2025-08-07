@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tradesContainer = document.getElementById('trades-container');
     const DEFAULT_BASE_URL = 'http://148.251.154.60:3011';
     const CORS_PROXIES = [
+        'https://rejdukien-cors-proxy.alwaysdata.net/proxy.php?url=',
         'https://api.allorigins.win/raw?url=',
         'https://proxy.cors.sh/',
         'https://corsproxy.io/?url='
