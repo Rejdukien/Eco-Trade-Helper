@@ -1,0 +1,368 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background-color: #f4f4f4;
+}
+
+header {
+    background-color: #333;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.server-config {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.server-config label {
+    color: #ccc;
+}
+
+.server-config input {
+    padding: 4px 8px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background-color: #555;
+    color: white;
+    min-width: 200px;
+}
+
+.server-config input:focus {
+    outline: none;
+    border-color: #4CAF50;
+}
+
+#server-name {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.online-indicator {
+    color: #4CAF50;
+    font-size: 12px;
+}
+
+body.dark-mode .server-config input {
+    background-color: #444;
+    border-color: #666;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-controls a {
+    color: #4CAF50;
+    text-decoration: none;
+    padding: 8px 15px;
+    border: 1px solid #4CAF50;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.header-controls a:hover {
+    background-color: #4CAF50;
+    color: white;
+}
+
+body.dark-mode .header-controls a {
+    color: #81C784;
+    border-color: #81C784;
+}
+
+body.dark-mode .header-controls a:hover {
+    background-color: #81C784;
+    color: #333;
+}
+
+#refresh-btn {
+    padding: 8px 15px;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#refresh-btn:hover {
+    background-color: #45a049;
+}
+
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+main {
+    padding: 20px;
+}
+
+.controls {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+
+.info-panel {
+    background-color: #e8f5e8;
+    border: 1px solid #4CAF50;
+    border-radius: 5px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.info-panel h3 {
+    margin: 0 0 10px 0;
+    color: #2c5530;
+}
+
+.info-panel ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.info-panel li {
+    margin-bottom: 5px;
+}
+
+body.dark-mode .info-panel {
+    background-color: #2d4a2d;
+    border-color: #81C784;
+}
+
+body.dark-mode .info-panel h3 {
+    color: #81C784;
+}
+
+.filter-controls label {
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.filter-controls input {
+    width: 80px;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    cursor: pointer;
+    font-weight: normal !important;
+}
+
+.checkbox-container input[type="checkbox"] {
+    margin-right: 8px;
+    width: auto;
+}
+
+.checkbox-container .checkmark {
+    margin-left: 5px;
+}
+
+#apply-filters {
+    padding: 8px 15px;
+    border: none;
+    background-color: #2196F3;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#apply-filters:hover {
+    background-color: #1976D2;
+}
+
+body.dark-mode .filter-controls {
+    background-color: #444;
+}
+
+.controls input, .controls select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#trades-container {
+    display: block;
+}
+
+#trades-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+#trades-table th, #trades-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: left;
+    vertical-align: top;
+}
+
+#trades-table td {
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+#trades-table td small {
+    display: block;
+    color: #666;
+    font-size: 0.8em;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+body.dark-mode #trades-table td small {
+    color: #aaa;
+}
+
+#trades-table th {
+    background-color: #333;
+    color: white;
+    white-space: nowrap;
+    font-size: 0.9em;
+}
+
+/* Specific styling for cross-currency arbitrage table */
+.cross-currency-step {
+    font-weight: bold;
+    color: #2c5530;
+}
+
+body.dark-mode .cross-currency-step {
+    color: #4CAF50;
+}
+
+/* Warning styling for store balance limitations */
+.balance-warning {
+    color: #ff9800;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+body.dark-mode .balance-warning {
+    color: #ffb74d;
+}
+
+#total-profit-container {
+    margin-top: 20px;
+    text-align: right;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #333;
+    color: #f4f4f4;
+}
+
+body.dark-mode header {
+    background-color: #222;
+}
+
+body.dark-mode .controls input, body.dark-mode .controls select {
+    background-color: #555;
+    color: #f4f4f4;
+    border-color: #777;
+}
+
+body.dark-mode #trades-table th {
+    background-color: #222;
+    color: #f4f4f4;
+}
+
+body.dark-mode #trades-table td {
+    border-color: #555;
+}
+
+body.dark-mode #trades-table tr:nth-child(even) {
+    background-color: #444;
+}

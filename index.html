@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Trade Helper</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <h1>Eco Trade Helper - Single Currency Trades</h1>
+            <div class="header-controls">
+                <a href="cross_currency.html">Cross-Currency Arbitrage</a>
+                <button id="refresh-btn">Refresh Data</button>
+                <label class="switch">
+                    <input type="checkbox" id="dark-mode-toggle">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div>
+        <div class="server-config">
+            <label for="server-url">Server URL:</label>
+            <input type="text" id="server-url" placeholder="http://148.251.154.60:3011">
+            <span id="server-name">Loading server info...</span>
+        </div>
+    </header>
+    <main>
+        <div class="controls">
+            <p>This page shows profitable single-currency trading opportunities within the same currency ecosystem.</p>
+            <div class="info-panel">
+                <h3>How to Read the Results:</h3>
+                <ul>
+                    <li><strong>Store Balance:</strong> Shows the current available funds for each store in their respective currency</li>
+                    <li><strong>Available/Wants:</strong> Shows how many items the store has available for sale or wants to buy</li>
+                    <li><strong>Sellable Qty:</strong> The maximum quantity you can trade (limited by seller stock, buyer demand, or buyer funds)</li>
+                    <li><strong>Total Profit:</strong> Profit per item × Sellable quantity</li>
+                    <li><strong>⚠️ Warnings:</strong> Show potential issues like low liquidity or insufficient buyer funds</li>
+                    <li><strong>Correct Profit:</strong> When checked, adjusts quantities based on buyer's actual available funds</li>
+                </ul>
+            </div>
+            <div class="filter-controls">
+                <input type="text" id="filter" placeholder="Filter by item name...">
+                <input type="text" id="store-filter" placeholder="Filter by store name...">
+                <select id="sort">
+                    <option value="profit">Sort by Profit per Item</option>
+                    <option value="totalProfit" selected>Sort by Total Profit</option>
+                    <option value="quantity">Sort by Quantity</option>
+                </select>
+                <select id="currency-filter"></select>
+                <input type="number" id="min-profit" placeholder="Min total profit...">
+                <input type="number" id="min-quantity" placeholder="Min quantity...">
+                <input type="number" id="max-quantity" placeholder="Max quantity...">
+                
+                <label class="checkbox-container">
+                    <input type="checkbox" id="hide-warnings">
+                    <span class="checkmark"></span>
+                    Hide warnings
+                </label>
+                
+                <label class="checkbox-container">
+                    <input type="checkbox" id="correct-profit">
+                    <span class="checkmark"></span>
+                    Correct for buyer funds
+                </label>
+            </div>
+        </div>
+        <div id="trades-container">
+            <table id="trades-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Buy From</th>
+                        <th>Sell To</th>
+                        <th>Buy Price</th>
+                        <th>Sell Price</th>
+                        <th>Profit per Item</th>
+                        <th>Sellable Qty</th>
+                        <th>Total Profit</th>
+                        <th>Warnings</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="total-profit-container"></div>
+        </div>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
