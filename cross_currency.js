@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const serverNameSpan = document.getElementById('server-name');
     
     const DEFAULT_BASE_URL = 'http://148.251.154.60:3011';
-    const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+    const CORS_PROXY = 'https://proxy.cors.sh/';
     const USE_CORS_PROXY = window.location.protocol === 'https:';
     
     let baseApiUrl = DEFAULT_BASE_URL;
@@ -63,18 +63,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update API URLs when server URL changes
     function updateApiUrls() {
-        const baseUrl = USE_CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(baseApiUrl)}` : baseApiUrl;
-        apiUrl = `${baseUrl}/api/v1/plugins/EcoPriceCalculator/stores`;
-        itemsApiUrl = `${baseUrl}/api/v1/plugins/EcoPriceCalculator/allItems`;
-        infoApiUrl = `${baseUrl}/info`;
+        if (USE_CORS_PROXY) {
+            apiUrl = `${CORS_PROXY}${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/stores`;
+            itemsApiUrl = `${CORS_PROXY}${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/allItems`;
+            infoApiUrl = `${CORS_PROXY}${baseApiUrl}/info`;
+        } else {
+            apiUrl = `${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/stores`;
+            itemsApiUrl = `${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/allItems`;
+            infoApiUrl = `${baseApiUrl}/info`;
+        }
     }
 
     // Fetch server info and update display
     async function fetchServerInfo() {
         try {
-            const url = USE_CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(baseApiUrl + '/info')}` : `${baseApiUrl}/info`;
-            const response = await fetch(url);
-            const data = await response.json();
+            const url = USE_CORS_PROXY ? `${CORS_PROXY}${baseApiUrl}/info` : `${baseApiUrl}/info`;
+            console.log('Fetching server info from:', url);
+            
+            const fetchOptions = {};
+            if (USE_CORS_PROXY) {
+                fetchOptions.headers = {
+                    'Origin': 'https://rejdukien.github.io'
+                };
+            }
+            
+            const response = await fetch(url, fetchOptions);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const text = await response.text();
+            console.log('Raw response:', text.substring(0, 200));
+            
+            const data = JSON.parse(text);
             onlinePlayerNames = data.OnlinePlayersNames || [];
             
             const rawServerName = data.Description ? `${data.Description}` : 'Unknown Server';
@@ -151,15 +173,20 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Starting fetchData...');
         const startTime = performance.now();
         
-        // Fetch server info, stores and items data
-        const storesUrl = USE_CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(baseApiUrl + '/api/v1/plugins/EcoPriceCalculator/stores')}` : apiUrl;
-        const itemsUrl = USE_CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(baseApiUrl + '/api/v1/plugins/EcoPriceCalculator/allItems')}` : itemsApiUrl;
-        const infoUrl = USE_CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(baseApiUrl + '/info')}` : infoApiUrl;
+        // Use the pre-constructed URLs from updateApiUrls()
+        console.log('Fetching data from URLs:', { apiUrl, itemsApiUrl, infoApiUrl });
+        
+        const fetchOptions = {};
+        if (USE_CORS_PROXY) {
+            fetchOptions.headers = {
+                'Origin': 'https://rejdukien.github.io'
+            };
+        }
         
         Promise.all([
-            fetch(infoUrl).then(response => response.json()).catch(() => ({ OnlinePlayersNames: [] })),
-            fetch(storesUrl).then(response => response.json()),
-            fetch(itemsUrl).then(response => response.json())
+            fetch(infoApiUrl, fetchOptions).then(response => response.json()).catch(() => ({ OnlinePlayersNames: [] })),
+            fetch(apiUrl, fetchOptions).then(response => response.json()),
+            fetch(itemsApiUrl, fetchOptions).then(response => response.json())
         ])
             .then(([infoData, storesData, itemsData]) => {
                 // Update server info
