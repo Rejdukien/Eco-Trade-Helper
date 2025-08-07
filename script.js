@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     const tradesContainer = document.getElementById('trades-container');
     const DEFAULT_BASE_URL = 'http://148.251.154.60:3011';
+    const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+    const USE_CORS_PROXY = window.location.protocol === 'https:';
+    
     let baseApiUrl = DEFAULT_BASE_URL;
     let apiUrl = `${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/stores`;
     let itemsApiUrl = `${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/allItems`;
@@ -92,22 +95,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update API URLs when server URL changes
     function updateApiUrls() {
-        apiUrl = `${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/stores`;
-        itemsApiUrl = `${baseApiUrl}/api/v1/plugins/EcoPriceCalculator/allItems`;
-        infoApiUrl = `${baseApiUrl}/info`;
+        const baseUrl = USE_CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(baseApiUrl)}` : baseApiUrl;
+        apiUrl = `${baseUrl}/api/v1/plugins/EcoPriceCalculator/stores`;
+        itemsApiUrl = `${baseUrl}/api/v1/plugins/EcoPriceCalculator/allItems`;
+        infoApiUrl = `${baseUrl}/info`;
     }
 
     // Fetch server info and update display
     async function fetchServerInfo() {
         try {
-            const response = await fetch(infoApiUrl);
+            const url = USE_CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(baseApiUrl + '/info')}` : `${baseApiUrl}/info`;
+            const response = await fetch(url);
             const data = await response.json();
             onlinePlayerNames = data.OnlinePlayersNames || [];
             
             const rawServerName = data.Description ? `${data.Description}` : 'Unknown Server';
             // Filter out color tags like <#59e817>
             const serverName = rawServerName.replace(/<#[0-9a-fA-F]{6}>/g, '').trim();
-            serverNameSpan.textContent = `Server: ${serverName}`;
+            const proxyIndicator = USE_CORS_PROXY ? ' (via proxy)' : '';
+            serverNameSpan.textContent = `Server: ${serverName}${proxyIndicator}`;
             serverNameSpan.style.color = '#4CAF50';
         } catch (error) {
             console.error('Failed to fetch server info:', error);
@@ -175,10 +181,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function fetchData() {
         // First fetch server info, then fetch stores and items data
+        const storesUrl = USE_CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(baseApiUrl + '/api/v1/plugins/EcoPriceCalculator/stores')}` : apiUrl;
+        const itemsUrl = USE_CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(baseApiUrl + '/api/v1/plugins/EcoPriceCalculator/allItems')}` : itemsApiUrl;
+        const infoUrl = USE_CORS_PROXY ? `${CORS_PROXY}${encodeURIComponent(baseApiUrl + '/info')}` : infoApiUrl;
+        
         Promise.all([
-            fetch(infoApiUrl).then(response => response.json()).catch(() => ({ OnlinePlayersNames: [] })),
-            fetch(apiUrl).then(response => response.json()),
-            fetch(itemsApiUrl).then(response => response.json())
+            fetch(infoUrl).then(response => response.json()).catch(() => ({ OnlinePlayersNames: [] })),
+            fetch(storesUrl).then(response => response.json()),
+            fetch(itemsUrl).then(response => response.json())
         ])
             .then(([infoData, storesData, itemsData]) => {
                 // Update server info
@@ -437,6 +447,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load preferences on page load
     loadPreferences();
+
+    // Show proxy notice if using HTTPS
+    if (USE_CORS_PROXY) {
+        const proxyNotice = document.getElementById('proxy-notice');
+        if (proxyNotice) {
+            proxyNotice.style.display = 'block';
+        }
+    }
 
     // Initial server info fetch
     fetchServerInfo();
