@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FX Rate Arbitrage - Eco Trade Helper</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header>
+    <div class="header-top">
+        <h1>Eco Trade Helper - FX Rate Arbitrage</h1>
+        <div class="header-controls">
+            <a href="index.html">Single Currency Trades</a>
+            <a href="cross_currency.html">Cross-Currency Arbitrage</a>
+            <button id="refresh-btn">Refresh Data</button>
+            <label class="switch">
+                <input type="checkbox" id="dark-mode-toggle" />
+                <span class="slider round"></span>
+            </label>
+        </div>
+    </div>
+    <div class="github-link">
+        <small><a href="https://github.com/Rejdukien/Eco-Trade-Helper" target="_blank" rel="noopener noreferrer">GitHub Project</a></small>
+    </div>
+    <div class="server-config">
+        <label for="server-url">Server URL:</label>
+        <input type="text" id="server-url" placeholder="http://148.251.154.60:3011" />
+        <span id="server-name">Loading server info...</span>
+    </div>
+</header>
+<main>
+    <div class="controls">
+        <div id="proxy-notice" class="proxy-notice" style="display:none;">
+            <p><strong>Note:</strong> Using proxy for HTTP resources over HTTPS.</p>
+        </div>
+        <div class="info-panel">
+            <p>Provide a hypothetical FX rate between two currencies to see profitable cross-currency single-hop trades (buy in one currency, sell in the other).</p>
+            <h3>How It Works</h3>
+            <ul>
+                <li>Enter Currency A and Currency B (case-sensitive match to server currencies).</li>
+                <li>Enter a rate as A : B (e.g. 1 : 1 means 1 A equals 1 B).</li>
+                <li>The tool finds items you can buy in A stores and sell in B stores profitably (and the reverse B -> A).</li>
+                <li>Quantities are limited by stock, demand, and buyer balance.</li>
+            </ul>
+        </div>
+        <div class="filter-controls fx-rate-form">
+            <div class="fx-row">
+                <label for="currency-a">Currency A:</label>
+                <select id="currency-a"></select>
+                <label for="currency-b">Currency B:</label>
+                <select id="currency-b"></select>
+            </div>
+            <div class="fx-row">
+                <label>Rate:</label>
+                <input type="number" id="rate-a" value="1" min="0" step="0.01" />
+                <span>:</span>
+                <input type="number" id="rate-b" value="1" min="0" step="0.01" />
+                <button id="apply-rate">Apply Rate</button>
+            </div>
+            <div class="fx-row">
+                <label>Min Profit (Base = Currency A units):</label>
+                <input type="number" id="min-profit" value="0" step="0.01" />
+                <label><input type="checkbox" id="hide-warnings" /> Hide warnings</label>
+            </div>
+        </div>
+    </div>
+    <div id="trades-container">
+        <table id="trades-table">
+            <thead>
+                <tr>
+                    <th>Direction</th>
+                    <th>Item</th>
+                    <th>Buy From (Store / Owner)</th>
+                    <th>Sell To (Store / Owner)</th>
+                    <th>Buy Price</th>
+                    <th>Sell Price</th>
+                    <th>Profit / Unit (in A)</th>
+                    <th>Qty</th>
+                    <th>Total Profit (in A)</th>
+                    <th>Warnings</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="total-profit-container"></div>
+    </div>
+</main>
+<script src="fx_arbitrage.js"></script>
+</body>
+</html>

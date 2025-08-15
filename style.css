@@ -190,9 +190,9 @@ main {
 .controls {
     margin-bottom: 20px;
     display: flex;
+    flex-direction: column; /* Stack children vertically: proxy notice, info panel, then filter controls */
     gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
+    align-items: stretch; /* Make children take full width */
 }
 
 .filter-controls {
